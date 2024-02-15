@@ -3,12 +3,12 @@ from bs4 import BeautifulSoup
 
 def scrape(url):
     response = requests.get(url, timeout=10)  
-    return response.text  
+    return response  
     
 
 def parse_content(response):
     meme_list = []
-    soup = BeautifulSoup(response, 'html.parser')
+    soup = BeautifulSoup(response.text, 'html.parser')
 
     title = soup.find_all('a', attrs={'class':'absolute inset-0'})
     post_link = soup.find_all('a', attrs={'class': 'block font-semibold text-neutral-content-strong m-0 visited:text-neutral-content-weak text-16 xs:text-18 mb-2xs xs:mb-xs'})
@@ -24,6 +24,29 @@ def parse_content(response):
 
     return meme_list
 
+def parse_json(response):
+    meme_list = []
+
+    if response.status_code == 200:
+        res = json.loads(response.text)
+        posts = res['data']['children']
+
+        for post in posts:
+            image = post['data']['thumbnail']
+            url = post['data']['permalink']
+            title = post['data']['title']
+
+            meme_list.append({
+                'title': title,
+                'post': 'https://www.reddit.com/r/ProgrammerHumor'+ url,
+                'image': image
+            })
+    
+    else:
+        print(f"{res.message}\n {res.status_code}")
+
+    return meme_list
+
 
 def store_meme(meme_list):
     with open('data.json', 'r') as file:
@@ -36,9 +59,10 @@ def store_meme(meme_list):
         json.dump(meme_list, file, indent=4)
 
 
-def preiodict_task(url='https://www.reddit.com/r/ProgrammerHumor/'):
+def preiodict_task(url='https://www.reddit.com/r/ProgrammerHumor.json'):
     response = scrape(url)
-    memes = parse_content(response)
+    print(response.text)
+    memes = parse_json(response)
     store_meme(memes)
 
 
@@ -50,6 +74,4 @@ def meme():
     return meme
 
 if __name__ == "__main__":
-    meme()
-
-
+    preiodict_task()
